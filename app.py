@@ -43,7 +43,7 @@ if api_key:
     「こんにちは、今日はどうしましたか？」といった風に始めてください。
     """
     
-    model = genai.GenerativeModel(
+    model_name="gemini-1.5-flash",
         model_name="models/gemini-1.5-flash",
         system_instruction=my_instruction
     )
