@@ -15,8 +15,7 @@ st.write("設定したキャラクターとの会話を始めましょう！")
 # 2. サイドバーの設定（APIキー入力欄）
 with st.sidebar:
     st.title("設定")
-    api_key = st.text_input("AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI", type="password")
-    st.caption("AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI")
+    api_key = "AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI"
 
 # 3. AIの動作設定
 if api_key:
