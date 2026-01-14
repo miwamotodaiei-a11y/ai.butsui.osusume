@@ -42,9 +42,7 @@ if api_key:
     【最初の第一声】
     「こんにちは、今日はどうしましたか？」といった風に始めてください。
     """
-    model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash"
-    )
+    model = genai.GenerativeModel("gemini-1.5-flash")
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
