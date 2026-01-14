@@ -25,7 +25,7 @@ if api_key:
 
 # モデルの定義（一番エラーが起きにくいシンプルな書き方）
 model = genai.GenerativeModel("gemini-1.5-flash")
-    if "messages" not in st.session_state:
+if "messages" not in st.session_state:
         st.session_state.messages = []
 
     for message in st.session_state.messages:
