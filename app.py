@@ -18,9 +18,9 @@ with st.sidebar:
     api_key = "AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI"
 
 # 3. AIの動作設定
-if api_key:
-# APIキーの設定を確実にする
-    genai.configure(api_key="AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI")
+# if not api_key:
+#     st.info("左側のサイドバーにAPIキーを入力してください。")
+#     st.stop()
 
 # モデルの定義（一番エラーが起きにくいシンプルな書き方）
 model = genai.GenerativeModel("gemini-1.5-flash")
