@@ -12,22 +12,20 @@ st.image(char_image_url, width=150)
 st.title("オリジナル対話トレーニング")
 st.write("設定したキャラクターとの会話を始めましょう！")
 
-# 2. サイドバーの設定（APIキー入力欄）
+# --- 2. サイドバーの設定 ---
 with st.sidebar:
     st.title("設定")
+    # APIキーをここで直接定義
     api_key = "AIzaSyCz8zepMKEZeYt28ZgEp1i781jXdDOx4xI"
 
-# 3. AIの動作設定
-# if not api_key:
-#     st.info("左側のサイドバーにAPIキーを入力してください。")
-#     st.stop()
-
-# --- 3. AIの動作設定 ---
-# ここで確実にAPIキーを登録し、モデルを準備します
+# --- 3. AIの動作設定（ここを一番最初に持ってくる） ---
+# まず鍵を登録する
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
-# チャット履歴の保存
+# 次にモデルを準備する（名前はシンプルに "gemini-1.5-flash" に戻します）
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# チャット履歴の初期化
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
