@@ -38,11 +38,9 @@ if "messages" not in st.session_state:
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
+# AIからの返答を取得
         response = model.generate_content(prompt)
-        
+
         with st.chat_message("assistant"):
             st.markdown(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
-else:
-    st.warning("左側のサイドバーにAPIキーを入力してください。")
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
