@@ -22,8 +22,8 @@ with st.sidebar:
 # まず鍵を登録する
 genai.configure(api_key=api_key)
 
-# 次にモデルを準備する（名前はシンプルに "gemini-1.5-flash" に戻します）
-model = genai.GenerativeModel("gemini-1.5-flash")
+# モデルの定義を、最も互換性の高い名前に変更します
+model = genai.GenerativeModel("gemini-pro")
 
 # チャット履歴の初期化
 if "messages" not in st.session_state:
