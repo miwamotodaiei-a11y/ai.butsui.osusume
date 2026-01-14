@@ -20,29 +20,11 @@ with st.sidebar:
 
 # 3. AIの動作設定
 if api_key:
-    genai.configure(api_key=api_key)
-    
-    # --- 【カスタマイズ：AIへの指示】 ---
-    # ここに「どんなキャラか」「どんな状況か」を自由に書いてください
-    # 複数行になっても大丈夫です
-    my_instruction = """
-    【あなたの役割】
-    ここにAIの性格や役割を書いてください。
-    例：あなたは親切なカウンセラーです。
-    
-    【シチュエーション】
-    ここにどんな場面かを書いてください。
-    例：相談者が悩みを打ち明けるのを待っています。
-    
-    【ランダム要素の指示】
-    ここがポイントです！
-    「会話のたびに、以下のAかBかCのパターンをランダムに選んで、その振る舞いをして」と書くと、
-    マンネリ化を防げます。
-    
-    【最初の第一声】
-    「こんにちは、今日はどうしましたか？」といった風に始めてください。
-    """
-    model = genai.GenerativeModel("gemini-1.5-flash")
+# APIキーの設定を確実にする
+genai.configure(api_key=api_key)
+
+# モデルの定義（一番エラーが起きにくいシンプルな書き方）
+model = genai.GenerativeModel("gemini-1.5-flash")
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
