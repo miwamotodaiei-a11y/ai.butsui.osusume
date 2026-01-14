@@ -25,7 +25,7 @@ with st.sidebar:
 # --- 3. AIの動作設定 ---
 # ここで確実にAPIキーを登録し、モデルを準備します
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel("models/gemini-1.5-flash")
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
 
 # チャット履歴の保存
 if "messages" not in st.session_state:
