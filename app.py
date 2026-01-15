@@ -9,8 +9,8 @@ st.set_page_config(page_title="●●社様オリジナル対話AI", layout="cen
 char_image_url = "https://daiei-recruit.net/company/img/i_1.jpg" 
 st.image(char_image_url, width=150)
 
-st.title("オリジナル対話トレーニング")
-st.write("設定したキャラクターとの会話を始めましょう！")
+st.title("仏衣のご提案シミュレーター")
+st.write("「仏衣って興味あるんだけどどういうメリットあるの？」")
 
 # --- 2. サイドバーの設定 ---
 with st.sidebar:
