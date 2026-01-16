@@ -1,133 +1,129 @@
 import streamlit as st
 import google.generativeai as genai
 
-# =========================
-# 🔑 Gemini API 設定
-# =========================
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-pro")
+# =====================
+# 初期設定
+# =====================
+st.set_page_config(page_title="仏衣営業ロープレ", layout="centered")
 
-# =========================
-# 🎭 システムプロンプト（魂）
-# =========================
+# =====================
+# APIキー
+# =====================
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+
+# =====================
+# SYSTEM PROMPT（長文OK）
+# =====================
 SYSTEM_PROMPT = """
 あなたは「葬儀社の担当者」です。
+ユーザーは「大栄の営業マン」で、仏衣を提案してきます。
 
-【あなたの立場】
-・葬儀社で実務を担当している
-・仏衣について、知識はあるが専門家ではない
-・価格・在庫・品質・遺族対応のしやすさを重視する
+ルール：
+・あなたは営業しません
+・質問・懸念・比較・現場目線のツッコミを行います
+・1回の発話は短すぎず、長すぎず
+・会話は自然な日本語
+・ランダムに反応の温度感を変えてください
+・最後に「総評」は行いません（ユーザー操作時のみ）
 
-【ロールプレイルール】
-・あなたは必ず「葬儀社側」としてのみ発言する
-・営業マン（人間）が話した内容に対して返答する
-・自分から話しすぎず、会話の主導権は営業マンに渡す
-・質問されたら、現場目線で正直に答える
-・ときどき迷いや不安も口にする
-
-【会話の目的】
-・仏衣について理解を深めたい
-・自社に合うかどうかを判断したい
-・押し売りされると引いてしまう
-
-【禁止事項】
-・営業マン役をやらない
-・結論を勝手に出さない
-・一人二役をしない
+立場：
+あなた＝葬儀社
+相手＝仏衣メーカー営業（大栄）
 """
-# =========================
-# 🧠 セッション初期化
-# =========================
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat(history=[])
 
+# =====================
+# セッション初期化
+# =====================
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-if "started" not in st.session_state:
-    st.session_state.started = False
-
-# =========================
-# 🎤 ブラウザ音声JS
-# =========================
-def speak_js(text):
-    js = f"""
-    <script>
-    const utterance = new SpeechSynthesisUtterance("{text}");
-    utterance.lang = "ja-JP";
-    speechSynthesis.speak(utterance);
-    </script>
-    """
-    st.components.v1.html(js)
-
-# =========================
-# 🖥 UI
-# =========================
-st.markdown(
-    """
-    <h1 style="color:white;">仏衣のご提案 ロールプレイシミュレーター</h1>
-    <p style="color:#ccc;">
-    このページでは、葬儀社様役のAIと対話しながら、仏衣の提案ロールプレイを行うことができます。
-    </p>
-    """,
-    unsafe_allow_html=True
-)
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("▶ ロールプレイ開始"):
-        st.session_state.started = True
-
-with col2:
-    if st.button("🔄 最初からやり直す"):
-        st.session_state.chat = model.start_chat(history=[])
-        st.session_state.messages = []
-        st.session_state.started = False
-
-with col3:
-    st.button("⛔ 終了（総評へ）", disabled=True)
-
-st.divider()
-
-# =========================
-# ▶ スタート時のAI発話（1回のみ）
-# =========================
-if st.session_state.started and len(st.session_state.messages) == 0:
-    first_message = "仏衣について、HPで見たのですが、詳しく教えてほしいです。"
-
-    response = st.session_state.chat.send_message(
-        SYSTEM_PROMPT + "\n\n" + first_message
+if "chat" not in st.session_state:
+    model = genai.GenerativeModel(
+        model_name="models/gemini-1.5-flash"
     )
 
-    ai_text = response.text
-    st.session_state.messages.append(("user", first_message))
-    st.session_state.messages.append(("ai", ai_text))
+    # ★ SYSTEM PROMPT はここでのみ渡す
+    st.session_state.chat = model.start_chat(
+        history=[
+            {
+                "role": "system",
+                "parts": [SYSTEM_PROMPT]
+            }
+        ]
+    )
 
-    speak_js(ai_text)
+# =====================
+# タイトル & 画像
+# =====================
+st.title("仏衣 営業ロールプレイ")
 
-# =========================
-# 💬 会話表示
-# =========================
-for role, msg in st.session_state.messages:
-    if role == "user":
-        st.markdown(f"🧑‍💼 **葬儀社**：{msg}")
-    else:
-        st.markdown(f"🤖 **営業担当**：{msg}")
+st.image(
+    "https://daiei-recruit.net/company/img/i_1.jpg",
+    use_column_width=True
+)
 
-# =========================
-# ✍ ユーザー入力
-# =========================
-if st.session_state.started:
-    user_input = st.text_input("あなたの返答（葬儀社として入力）")
+st.markdown("""
+**想定**
+- あなた：大栄の営業担当
+- 相手：葬儀社の担当者（AI）
 
-    if user_input:
-        st.session_state.messages.append(("user", user_input))
+スタートを押すとロールプレイが始まります。
+""")
 
-        response = st.session_state.chat.send_message(user_input)
-        ai_text = response.text
+# =====================
+# スタートボタン
+# =====================
+if st.button("▶ スタート"):
+    first_message = "それでは仏衣の件で少しお時間よろしいですか？"
 
-        st.session_state.messages.append(("ai", ai_text))
-        speak_js(ai_text)
+    response = st.session_state.chat.send_message(first_message)
 
-        st.experimental_rerun()
+    st.session_state.messages.append(
+        {"role": "assistant", "content": response.text}
+    )
+
+# =====================
+# チャット表示
+# =====================
+for msg in st.session_state.messages:
+    with st.chat_message("assistant"):
+        st.markdown(msg["content"])
+
+# =====================
+# ユーザー入力
+# =====================
+user_input = st.chat_input("あなたの発言を入力してください")
+
+if user_input:
+    # ユーザー発話 → AI
+    response = st.session_state.chat.send_message(user_input)
+
+    st.session_state.messages.append(
+        {"role": "assistant", "content": response.text}
+    )
+
+    st.rerun()
+
+# =====================
+# 音声読み上げ（ブラウザ）
+# =====================
+if st.session_state.messages:
+    latest = st.session_state.messages[-1]["content"]
+
+    st.components.v1.html(
+        f"""
+        <script>
+        const msg = new SpeechSynthesisUtterance({latest!r});
+        msg.lang = 'ja-JP';
+        speechSynthesis.speak(msg);
+        </script>
+        """,
+        height=0
+    )
+
+# =====================
+# リセット
+# =====================
+if st.button("🔁 最初からやり直す"):
+    st.session_state.clear()
+    st.rerun()
