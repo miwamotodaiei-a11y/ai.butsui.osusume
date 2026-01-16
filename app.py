@@ -49,7 +49,7 @@ instruction = """
 """
 
 model = genai.GenerativeModel(
-    model_name="models/gemini-pro",
+    model_name="gemini-pro",
     system_instruction=instruction
 )
 
