@@ -1,172 +1,96 @@
 import streamlit as st
-import google.generativeai as genai
+from streamlit.components.v1 import html
 
-# =========================
-# ページ基本設定
-# =========================
-st.set_page_config(
-    page_title="仏衣ロールプレイシミュレーター",
-    layout="centered"
-)
-
-# =========================
-# タイトル画像・説明
-# =========================
-IMAGE_URL = "https://daiei-recruit.net/company/img/i_1.jpg"
-
-st.image(IMAGE_URL, width=160)
-st.title("仏衣のご提案 ロールプレイシミュレーター")
-st.write(
-    "このページでは、**葬儀社様役のAI** と対話しながら、"
-    "仏衣の提案ロールプレイを行うことができます。"
-)
-
-# =========================
-# Gemini APIキー（Secrets）
-# =========================
-api_key = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=api_key)
-
-# =========================
-# ★ 超重要：長文SYSTEMプロンプト ★
-# =========================
-SYSTEM_PROMPT = """
-あなたはAIですが、以下のロールプレイ設定に完全になりきってください。
-
-あなたの役割は
-【大栄（だいえい）の仏衣に興味を持っている葬儀社の責任者】です。
-私は【大栄の仏衣を提案する営業担当】です。
-
---------------------------------------------------
-■ 動作ルール（最重要）
---------------------------------------------------
-新しいロールプレイが開始されるたびに、
-以下の項目を内部でランダムに1つずつ選び、
-ユーザーには開示せず、その設定になりきってください。
-
-【1. 葬儀社の規模】
-・家族3人経営（月5件）
-・従業員10名（月15件）
-・従業員30名（月30件）
-
-【2. 会社の方針】
-・施行件数重視
-・単価アップ重視
-・顧客満足度重視
-
-【3. 仏衣の地域認知】
-・ほぼ知られていない
-・白装束の認識のみ
-・競合が柄物を導入済み
-
-【4. 外的要因】
-・私服希望の声がある
-・仏衣文化が薄れている
-
-【5. 性格】
-・フレンドリーだが優柔不断
-・結論を急ぐ
-・知識があり細かい
-
---------------------------------------------------
-■ 会話開始ルール
---------------------------------------------------
-会話は必ず次の一言から始めてください。
-
-「仏衣について、HPで見たのですが、詳しく教えて欲しいです。」
-
-質問は必ず1つずつ行ってください。
-
---------------------------------------------------
-■ ロールプレイ終了条件
---------------------------------------------------
-ユーザーが
-「終了します」「お疲れ様でした」
-と言ったら、その時点で会話を終了し、
-以下の総評を行ってください。
-
-【総評】
-・安心感（良かった点）
-・改善点（不安・矛盾）
-・点数評価（100点満点）
-
---------------------------------------------------
-■ 知識補足
---------------------------------------------------
-「仏衣」は「ぶつい」と読みます。
-"""
-
-# =========================
-# Gemini モデル生成
-# =========================
-model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
-    system_instruction=SYSTEM_PROMPT
-)
-
-# =========================
-# セッション初期化
-# =========================
-if "chat" not in st.session_state:
-    st.session_state.chat = None
+# =====================
+# 初期設定
+# =====================
+st.set_page_config(page_title="AI会話デモ", layout="centered")
 
 if "started" not in st.session_state:
     st.session_state.started = False
 
-# =========================
-# 操作ボタン
-# =========================
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "ended" not in st.session_state:
+    st.session_state.ended = False
+
+
+# =====================
+# 音声読み上げ関数（JS）
+# =====================
+def speak(text):
+    html(
+        f"""
+        <script>
+        const msg = new SpeechSynthesisUtterance("{text}");
+        msg.lang = "ja-JP";
+        window.speechSynthesis.speak(msg);
+        </script>
+        """,
+        height=0
+    )
+
+
+# =====================
+# タイトル
+# =====================
+st.title("🗣️ AI 音声会話デモ")
+
+
+# =====================
+# ボタンエリア
+# =====================
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    start_btn = st.button("▶ ロールプレイ開始")
+    if st.button("▶ スタート"):
+        st.session_state.started = True
+        st.session_state.ended = False
+        st.session_state.messages = []
+
+        first_message = "こんにちは！今日はどんなお話をしましょうか？"
+        st.session_state.messages.append(("AI", first_message))
+        speak(first_message)
 
 with col2:
-    reset_btn = st.button("🔄 最初からやり直す")
+    if st.button("🔄 最初からやり直す"):
+        st.session_state.started = False
+        st.session_state.ended = False
+        st.session_state.messages = []
 
 with col3:
-    end_btn = st.button("⛔ 終了（総評へ）")
+    if st.button("⛔ 終了（中断）"):
+        st.session_state.ended = True
+        st.session_state.started = False
 
-# =========================
-# ボタン動作
-# =========================
-if start_btn:
-    st.session_state.chat = model.start_chat(history=[])
-    st.session_state.started = True
+        summary = "ここまでのお話、ありがとうございました。今回はここで終了します。"
+        st.session_state.messages.append(("AI", summary))
+        speak(summary)
 
-    # ★ send_message には短文のみ ★
-    first_message = "仏衣について、HPで見たのですが、詳しく教えて欲しいです。"
-    response = st.session_state.chat.send_message(first_message)
 
-if reset_btn:
-    st.session_state.chat = None
-    st.session_state.started = False
-    st.rerun()
+# =====================
+# 会話表示
+# =====================
+st.divider()
 
-if end_btn and st.session_state.chat:
-    response = st.session_state.chat.send_message("終了します")
-    st.session_state.started = False
+for speaker, msg in st.session_state.messages:
+    if speaker == "AI":
+        st.markdown(f"**🤖 AI**：{msg}")
+    else:
+        st.markdown(f"**🧑 あなた**：{msg}")
 
-# =========================
-# チャット履歴表示
-# =========================
-if st.session_state.chat:
-    for msg in st.session_state.chat.history:
-        role = "assistant" if msg.role == "model" else "user"
-        with st.chat_message(role):
-            st.markdown(msg.parts[0].text)
 
-# =========================
-# ユーザー入力
-# =========================
-if st.session_state.started:
-    user_input = st.chat_input("メッセージを入力してください")
+# =====================
+# 入力欄（会話中のみ）
+# =====================
+if st.session_state.started and not st.session_state.ended:
+    user_input = st.text_input("あなたの発言を入力してください")
 
     if user_input:
-        with st.chat_message("user"):
-            st.markdown(user_input)
+        st.session_state.messages.append(("あなた", user_input))
 
-        response = st.session_state.chat.send_message(user_input)
-
-        with st.chat_message("assistant"):
-            st.markdown(response.text)
+        # ここは仮のAI応答（後でChatGPT / Gemini差し替え可）
+        ai_reply = f"なるほど、「{user_input}」なんですね。もう少し教えてください。"
+        st.session_state.messages.append(("AI", ai_reply))
+        speak(ai_reply)
