@@ -22,13 +22,13 @@ if not api_key:
 else:
     genai.configure(api_key=api_key)
     
-    # モデルの定義（最新の安定版指定）
-    # system_instructionにNotebookLMの設定を入れてください
+    # 指示文（ここにNotebookLMの内容を入れられます）
     instruction = "あなたは葬儀の専門家です。お客様に寄り添い、仏衣のメリットを優しく丁寧に説明してください。"
     
-    # モデル名を 'models/gemini-1.5-flash' とフルパスで書くことで解決する場合があります
-    model = genai.GenerativeModel("gemini-1.5-flash")
-    system_instruction=instruction
+    # 修正版：字下げを正確に揃えたコード
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        system_instruction=instruction
     )
 
 # --- 4. チャット履歴の初期化 ---
