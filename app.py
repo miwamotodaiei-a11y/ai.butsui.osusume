@@ -28,7 +28,7 @@ else:
     
     # モデル名を 'models/gemini-1.5-flash' とフルパスで書くことで解決する場合があります
     model = genai.GenerativeModel("gemini-1.5-flash")
-        system_instruction=instruction
+    system_instruction=instruction
     )
 
 # --- 4. チャット履歴の初期化 ---
