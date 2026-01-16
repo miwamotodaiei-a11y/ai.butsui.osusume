@@ -2,9 +2,12 @@ import streamlit as st
 import google.generativeai as genai
 
 # =====================
-# 初期設定
+# ページ設定
 # =====================
-st.set_page_config(page_title="仏衣営業ロープレ", layout="centered")
+st.set_page_config(
+    page_title="仏衣 営業ロールプレイ",
+    layout="centered"
+)
 
 # =====================
 # APIキー
@@ -12,23 +15,32 @@ st.set_page_config(page_title="仏衣営業ロープレ", layout="centered")
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # =====================
-# SYSTEM PROMPT（長文OK）
+# SYSTEM PROMPT（長文）
 # =====================
 SYSTEM_PROMPT = """
-あなたは「葬儀社の担当者」です。
-ユーザーは「大栄の営業マン」で、仏衣を提案してきます。
+あなたは【葬儀社の責任者】です。
+ユーザーは【大栄（だいえい）の営業マン】で、仏衣を提案してきます。
 
-ルール：
-・あなたは営業しません
-・質問・懸念・比較・現場目線のツッコミを行います
-・1回の発話は短すぎず、長すぎず
-・会話は自然な日本語
-・ランダムに反応の温度感を変えてください
-・最後に「総評」は行いません（ユーザー操作時のみ）
+【あなたの役割】
+・あなたは売らない
+・質問・懸念・比較・現場目線の疑問を投げかける
+・一度に質問は1つだけ
+・結論を急ぎすぎない
+・営業トークはしない
 
-立場：
-あなた＝葬儀社
-相手＝仏衣メーカー営業（大栄）
+【前提】
+・仏衣は今まで白1種類のみ
+・売り物として考えたことがない
+・前例がなく不安を感じている
+
+【開始時】
+スタート時、あなたから自然な第一声で話し始めてください。
+例：
+「仏衣の件でホームページを見たんですが、少し教えてもらえますか？」
+
+【禁止事項】
+・あなたが営業側に回ること
+・勝手に総評を始めること
 """
 
 # =====================
@@ -39,10 +51,9 @@ if "messages" not in st.session_state:
 
 if "chat" not in st.session_state:
     model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash"
+        model_name="gemini-1.5-flash"  # ← ★超重要（models/ は付けない）
     )
 
-    # ★ SYSTEM PROMPT はここでのみ渡す
     st.session_state.chat = model.start_chat(
         history=[
             {
@@ -53,7 +64,7 @@ if "chat" not in st.session_state:
     )
 
 # =====================
-# タイトル & 画像
+# UI
 # =====================
 st.title("仏衣 営業ロールプレイ")
 
@@ -63,49 +74,50 @@ st.image(
 )
 
 st.markdown("""
-**想定**
-- あなた：大栄の営業担当
-- 相手：葬儀社の担当者（AI）
+**設定**
+- あなた：大栄の仏衣営業
+- 相手：葬儀社の責任者（AI）
 
-スタートを押すとロールプレイが始まります。
+スタートを押すと、AIが最初に話しかけます。
 """)
 
 # =====================
-# スタートボタン
+# スタート
 # =====================
 if st.button("▶ スタート"):
-    first_message = "それでは仏衣の件で少しお時間よろしいですか？"
+    first_message = "（ロールプレイ開始）"
 
     response = st.session_state.chat.send_message(first_message)
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response.text}
-    )
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response.text
+    })
 
 # =====================
-# チャット表示
+# 会話表示
 # =====================
 for msg in st.session_state.messages:
     with st.chat_message("assistant"):
         st.markdown(msg["content"])
 
 # =====================
-# ユーザー入力
+# 入力
 # =====================
-user_input = st.chat_input("あなたの発言を入力してください")
+user_input = st.chat_input("あなた（大栄営業）の発言")
 
 if user_input:
-    # ユーザー発話 → AI
     response = st.session_state.chat.send_message(user_input)
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response.text}
-    )
+    st.session_state.messages.append({
+        "role": "assistant",
+        "content": response.text
+    })
 
     st.rerun()
 
 # =====================
-# 音声読み上げ（ブラウザ）
+# 音声読み上げ（最新発話）
 # =====================
 if st.session_state.messages:
     latest = st.session_state.messages[-1]["content"]
@@ -114,7 +126,7 @@ if st.session_state.messages:
         f"""
         <script>
         const msg = new SpeechSynthesisUtterance({latest!r});
-        msg.lang = 'ja-JP';
+        msg.lang = "ja-JP";
         speechSynthesis.speak(msg);
         </script>
         """,
