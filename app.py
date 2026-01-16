@@ -27,8 +27,7 @@ else:
     instruction = "あなたは葬儀の専門家です。お客様に寄り添い、仏衣のメリットを優しく丁寧に説明してください。"
     
     # モデル名を 'models/gemini-1.5-flash' とフルパスで書くことで解決する場合があります
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+    model = genai.GenerativeModel("gemini-1.5-flash")
         system_instruction=instruction
     )
 
