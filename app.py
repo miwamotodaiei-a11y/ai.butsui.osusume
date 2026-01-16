@@ -28,7 +28,7 @@ else:
     
     # モデル名を 'models/gemini-1.5-flash' とフルパスで書くことで解決する場合があります
     model = genai.GenerativeModel(
-        model_name="models/gemini-1.5-flash",
+        model_name="gemini-1.5-flash",
         system_instruction=instruction
     )
 
