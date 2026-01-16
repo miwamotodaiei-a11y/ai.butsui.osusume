@@ -154,7 +154,7 @@ if reset_btn:
     st.session_state.chat = None
     st.session_state.messages = []
     st.session_state.started = False
-    st.experimental_rerun()
+    st.st.rerun()
 
 # =========================
 # スタート処理
@@ -211,7 +211,7 @@ if st.session_state.started:
         </script>
         """, unsafe_allow_html=True)
 
-        st.experimental_rerun()
+        st.st.rerun()
 
 # =========================
 # 強制終了ボタン
