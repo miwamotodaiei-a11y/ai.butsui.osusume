@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 
 # ===============================
 # 1. ページ設定
@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 # ===============================
-# 2. 画像・タイトル表示
+# 2. 画像・タイトル
 # ===============================
 char_image_url = "https://daiei-recruit.net/company/img/i_1.jpg"
 st.image(char_image_url, width=150)
@@ -19,14 +19,7 @@ st.title("仏衣のご提案シミュレーター")
 st.write("「仏衣って興味あるんだけど、どういうメリットがあるの？」")
 
 # ===============================
-# 3. サイドバー（設定）
-# ===============================
-with st.sidebar:
-    st.title("設定")
-    st.write("このページは仏衣のご提案ロールプレイング用AIです。")
-
-# ===============================
-# 4. APIキー設定（Secrets使用）
+# 3. APIキー取得（Secrets）
 # ===============================
 try:
     api_key = st.secrets["GOOGLE_API_KEY"]
@@ -34,38 +27,33 @@ except KeyError:
     st.error("GOOGLE_API_KEY が設定されていません。")
     st.stop()
 
-genai.configure(api_key=api_key)
+# ===============================
+# 4. Gemini クライアント生成（新SDK）
+# ===============================
+client = genai.Client(api_key=api_key)
 
 # ===============================
-# 5. AIモデル設定
+# 5. システム指示（ロール設定）
 # ===============================
-instruction = """
+SYSTEM_INSTRUCTION = """
 あなたは葬儀の専門家です。
-お客様の気持ちに寄り添いながら、仏衣について
-・無理に売り込まず
-・やさしく
-・わかりやすく
-メリットや考え方を説明してください。
+お客様の気持ちに寄り添いながら、
+仏衣について無理に売り込まず、
+やさしく、わかりやすく説明してください。
 """
 
-model = genai.GenerativeModel(
-    model_name="gemini-pro",
-    system_instruction=instruction
-)
+# ===============================
+# 6. チャット履歴初期化
+# ===============================
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
 # ===============================
-# 6. チャットセッション初期化
+# 7. 過去メッセージ表示
 # ===============================
-if "chat_session" not in st.session_state:
-    st.session_state.chat_session = model.start_chat(history=[])
-
-# ===============================
-# 7. 過去の会話表示
-# ===============================
-for message in st.session_state.chat_session.history:
-    role = "assistant" if message.role == "model" else "user"
-    with st.chat_message(role):
-        st.markdown(message.parts[0].text)
+for msg in st.session_state.messages:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
 
 # ===============================
 # 8. チャット入力
@@ -73,20 +61,40 @@ for message in st.session_state.chat_session.history:
 prompt = st.chat_input("メッセージを入力してください")
 
 if prompt:
-    # ユーザー発言表示
+    # ユーザー入力を保存・表示
+    st.session_state.messages.append(
+        {"role": "user", "content": prompt}
+    )
     with st.chat_message("user"):
         st.markdown(prompt)
 
     try:
-        # AI応答
-        response = st.session_state.chat_session.send_message(prompt)
+        # Gemini 呼び出し（新方式）
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=[
+                {
+                    "role": "system",
+                    "parts": [{"text": SYSTEM_INSTRUCTION}]
+                },
+                *[
+                    {
+                        "role": m["role"],
+                        "parts": [{"text": m["content"]}]
+                    }
+                    for m in st.session_state.messages
+                ],
+            ],
+        )
 
+        reply = response.text
+
+        # AI応答を保存・表示
+        st.session_state.messages.append(
+            {"role": "assistant", "content": reply}
+        )
         with st.chat_message("assistant"):
-            st.markdown(response.text)
+            st.markdown(reply)
 
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
-        st.info(
-            "モデル名やライブラリのバージョンをご確認ください。\n"
-            "必要であれば `pip install -U google-generativeai` を実行してください。"
-        )
