@@ -11,6 +11,15 @@ st.set_page_config(
 )
 
 # =========================
+# セッション初期化
+# =========================
+if "started" not in st.session_state:
+    st.session_state.started = False
+
+if "ended" not in st.session_state:
+    st.session_state.ended = False
+
+# =========================
 # タイトル・説明
 # =========================
 st.image(
@@ -23,13 +32,11 @@ st.subheader("〜 葬儀社向け 仏衣提案の営業練習ツール 〜")
 
 st.markdown("""
 あなたは **仏衣メーカー（大栄）の営業マン**。  
-AIは **葬儀社の責任者** になりきって応対します。
+AIは **葬儀社の責任者** として対応します。
 
-・毎回異なる状況設定  
-・質問は1つずつ  
-・最終的に導入判断＋講評あり  
-
-実際の商談練習として活用してください。
+▶ スタートボタンで開始  
+▶ 途中終了すると、その時点で総評が出ます  
+▶ 何度でもやり直し可能
 """)
 
 st.divider()
@@ -46,10 +53,10 @@ model = genai.GenerativeModel(
     system_instruction="""
 あなたはリアルな商談ロールプレイAIです。
 
-・AIであることを明かさない
-・毎回反応や思考に揺らぎを持たせる
+・AIであることは絶対に明かさない
+・毎回反応・思考・論点に揺らぎを持たせる
 ・質問は必ず1つずつ行う
-・最終的に導入判断を行う
+・最終的に導入判断と講評を行う
 """
 )
 
@@ -82,42 +89,85 @@ ROLEPLAY_PROMPT = """
 ・仏衣の必要性が伝えづらい
 
 ■ 性格
-・優柔不断
+・優柔断
 ・せっかち
 ・知識豊富で比較重視
 
 【開始時】
-「仏衣について、ホームページで見たのですが、詳しく教えてもらえますか？」
+あなたから自然な第一声で会話を始めてください。
+例：
+「仏衣についてホームページで見たのですが、詳しく教えてもらえますか？」
 
 【ルール】
 ・質問は必ず1つずつ
 ・混乱したら順序を聞き返す
 ・納得した場合のみ導入意思を示す
 
-【終了】
-「終了します」「お疲れ様でした」が出たら
-安心感・改善点を点数付きで講評する
+【終了条件】
+以下のいずれかでロールプレイ終了とする
+・ユーザーが「終了します」「お疲れ様でした」と言った場合
+・途中終了ボタンが押された場合
+
+【終了後】
+安心感・説明の分かりやすさ・改善点を
+点数付きで講評してください。
 """
 
 # =========================
-# チャット初期化
+# 操作ボタン
 # =========================
-if "chat" not in st.session_state:
-    st.session_state.chat = model.start_chat()
-    st.session_state.chat.send_message(ROLEPLAY_PROMPT)
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if not st.session_state.started:
+        if st.button("▶ スタート"):
+            st.session_state.started = True
+            st.session_state.ended = False
+            st.session_state.chat = model.start_chat()
+            st.session_state.chat.send_message(ROLEPLAY_PROMPT)
+            st.rerun()
+
+with col2:
+    if st.session_state.started:
+        if st.button("🔄 最初からやり直す"):
+            st.session_state.started = False
+            st.session_state.ended = False
+            st.session_state.pop("chat", None)
+            st.rerun()
+
+with col3:
+    if st.session_state.started and not st.session_state.ended:
+        if st.button("⛔ 終了（中断）"):
+            st.session_state.ended = True
+            summary_prompt = """
+ロールプレイを途中で終了します。
+これまでのやり取りを踏まえて、
+良かった点・改善点・総合評価を点数付きで講評してください。
+"""
+            response = st.session_state.chat.send_message(summary_prompt)
+            st.session_state.summary = response.text
 
 # =========================
-# チャットUI
+# チャット表示
 # =========================
-st.subheader("💬 ロールプレイ開始")
+if st.session_state.started and not st.session_state.ended:
+    st.subheader("💬 ロールプレイ中")
 
-user_input = st.chat_input("例：こんにちは")
+    user_input = st.chat_input("例：こんにちは")
 
-if user_input:
-    with st.chat_message("user"):
-        st.write(user_input)
+    if user_input:
+        with st.chat_message("user"):
+            st.write(user_input)
 
-    response = st.session_state.chat.send_message(user_input)
+        response = st.session_state.chat.send_message(user_input)
 
-    with st.chat_message("assistant"):
-        st.write(response.text)
+        with st.chat_message("assistant"):
+            st.write(response.text)
+
+# =========================
+# 総評表示
+# =========================
+if st.session_state.ended:
+    st.subheader("📝 総評")
+
+    st.write(st.session_state.summary)
